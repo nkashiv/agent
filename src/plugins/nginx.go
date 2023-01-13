@@ -215,7 +215,11 @@ func (n *Nginx) uploadConfig(config *proto.ConfigDescriptor, messageId string) e
 		log.Errorf("Unable to read nginx config %s: %v", nginx.GetConfPath(), err)
 		return err
 	}
-
+	jsonCfg, err := json.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("error marshaling the nginx config %v", err)
+	}
+	log.Debugf("Nginx config being read: %s", jsonCfg)
 	if n.isNAPEnabled {
 		cfg, err = sdk.AddAuxfileToNginxConfig(nginx.GetConfPath(), cfg, n.wafLocation, n.config.AllowedDirectoriesMap, true)
 		if err != nil {
