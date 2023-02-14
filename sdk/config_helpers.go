@@ -28,7 +28,7 @@ import (
 	filesSDK "github.com/nginx/agent/sdk/v2/files"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
-	"github.com/nginxinc/nginx-go-crossplane"
+	crossplane "github.com/nginxinc/nginx-go-crossplane"
 )
 
 type DirectoryMap struct {
@@ -60,12 +60,13 @@ func (dm DirectoryMap) addDirectory(dir string) error {
 	return nil
 }
 
-func (dm DirectoryMap) appendFile(dir string, info fs.FileInfo) error {
+func (dm DirectoryMap) appendFile(dir string, info fs.FileInfo, lines int) error {
 	fileProto := &proto.File{
 		Name:        info.Name(),
 		Mtime:       filesSDK.TimeConvert(info.ModTime()),
 		Permissions: filesSDK.GetPermissions(info.Mode()),
 		Size_:       info.Size(),
+		Lines:       int32(lines),
 	}
 
 	return dm.appendFileWithProto(dir, fileProto)
@@ -174,7 +175,7 @@ func updateNginxConfigFromPayload(
 			return fmt.Errorf("configs: could not read file info(%s): %s", xpConf.File, err)
 		}
 
-		if err := directoryMap.appendFile(base, info); err != nil {
+		if err := directoryMap.appendFile(base, info, 5); err != nil {
 			return err
 		}
 
@@ -340,7 +341,7 @@ func updateNginxConfigWithCert(
 		// we want the meta information, but skip putting the files into the aux contents
 		return nil
 	}
-	if err := directoryMap.appendFile(filepath.Dir(file), info); err != nil {
+	if err := directoryMap.appendFile(filepath.Dir(file), info, 5); err != nil {
 		return err
 	}
 
@@ -491,7 +492,7 @@ func updateNginxConfigFileWithRoot(
 			}
 			defer reader.Close()
 
-			if err := directoryMap.appendFile(filepath.Dir(path), info); err != nil {
+			if err := directoryMap.appendFile(filepath.Dir(path), info, 5); err != nil {
 				return err
 			}
 
@@ -531,7 +532,7 @@ func updateNginxConfigFileWithAuxFile(
 		}
 	}
 
-	if err := directoryMap.appendFile(filepath.Dir(file), info); err != nil {
+	if err := directoryMap.appendFile(filepath.Dir(file), info, 5); err != nil {
 		return err
 	}
 
